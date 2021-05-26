@@ -3,7 +3,41 @@ import socket
 from threading import Thread
 import time
 import pickle
-
+def check(received_dict,recv_string_message):
+    status = 0
+    data_received = recv_string_message.split(':')
+    if data_received[0]=='A' and name=='C':
+        time.sleep(50)
+    for val in received_dict:
+        if received_dict[val] <= V_local[val] and val!=data_received[0]:
+            status+=1
+        elif val==data_received[0] and received_dict[val] > V_local[val]:
+            status+=1
+        else:
+            status = 0
+            break        
+    if status!=0:
+        for val in received_dict:
+            if received_dict[val] > V_local[val]:
+                V_local[val] = received_dict[val]
+    else:
+        if name!=data_received[0]:
+            print("local")
+            print(V_local)
+            print("Received")
+            print(received_dict)
+            print("Buffer the request")
+            waiting = []
+            waiting.append(received_dict)
+            time.sleep(60)
+            dicti=waiting[0]
+            for val in dicti:
+                if dicti[val] > V_local[val]:
+                    V_local[val] = dicti[val]
+            #print("after some time")
+            #print(V_local)
+    print('\r%s\n' % recv_string_message, end='') 
+    print(V_local)
 def GetUdpChatMessage():
     global name
     global broadcastSocket
@@ -13,21 +47,28 @@ def GetUdpChatMessage():
     while True:
         recv_message = broadcastSocket.recv(1024)             
         recv_string_message = str(recv_message.decode('utf-8'))
+        #data_received = recv_string_message.split(':')
+        
+        
         #print(recv_string_message)
         if recv_string_message.find(':') != -1:
-            data_received = recv_string_message.split(':')
+            
             #print(data_received[0])
             recv_message1 = broadcastSocket.recv(1024)             
             #recv_string_message1 = str(recv_message1.decode('utf-8'))
             received_dict = pickle.loads(recv_message1)
+            
+            Thread1 = Thread(target=check,args=(received_dict,recv_string_message)) 
+            Thread1.start()
+                           
             #print(received_dict)
-            if name!=data_received[0]:
-                V_local[name]+=1
-            for val in received_dict:
-                if received_dict[val] > V_local[val]:
-                    V_local[val] = received_dict[val]  
-            print('\r%s\n' % recv_string_message, end='') 
-            print(V_local)    
+            #if name!=data_received[0]:
+             #   V_local[name]+=1
+             
+            #for val in received_dict:
+            #    if received_dict[val] > V_local[val]:
+            #        V_local[val] = received_dict[val]  
+                
         elif recv_string_message.find('!@#') != -1 and recv_string_message.find(':') == -1 and recv_string_message[3:] in current_online:
             current_online.remove(recv_string_message[3:])   
             V_local.pop(recv_string_message[3:])
